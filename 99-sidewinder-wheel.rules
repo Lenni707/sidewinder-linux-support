@@ -1,0 +1,37 @@
+# /etc/udev/rules.d/99-sidewinder-wheel.rules
+#
+# Grant the 'input' group read/write access to the SideWinder FFB Wheel
+# hidraw node, and ensure /dev/uinput is accessible for virtual device creation.
+#
+# Installation:
+#   sudo cp 99-sidewinder-wheel.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload-rules
+#   sudo udevadm trigger
+#   sudo usermod -aG input $USER   # then log out and back in
+#
+# After this your user can run sidewinder-wheel without sudo.
+
+# ── SideWinder Force Feedback Wheel ──────────────────────────────────────────
+# Match by VID (0x045e = Microsoft) and PID (0x001b = SideWinder FFB Wheel).
+# Adjust ATTR{idProduct} if your wheel has a different PID (use lsusb to check).
+
+SUBSYSTEM=="hidraw", \
+  ATTRS{idVendor}=="045e", \
+  ATTRS{idProduct}=="001b", \
+  GROUP="input", MODE="0660", \
+  TAG+="uaccess"
+
+# Fallback: match any Microsoft HID device (useful during PID discovery)
+# Uncomment the line below instead if you don't know the PID yet:
+# SUBSYSTEM=="hidraw", ATTRS{idVendor}=="045e", GROUP="input", MODE="0660"
+
+# ── uinput ───────────────────────────────────────────────────────────────────
+# Allow the 'input' group to write to /dev/uinput (needed to create virtual devices).
+
+KERNEL=="uinput", GROUP="input", MODE="0660", OPTIONS+="static_node=uinput"
+
+# ── USB device node (optional, for lsusb / udevadm inspection) ────────────────
+SUBSYSTEM=="usb", \
+  ATTRS{idVendor}=="045e", \
+  ATTRS{idProduct}=="001b", \
+  GROUP="input", MODE="0664"
